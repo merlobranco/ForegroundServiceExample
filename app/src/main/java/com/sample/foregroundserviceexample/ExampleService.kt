@@ -1,8 +1,12 @@
 package com.sample.foregroundserviceexample
 
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import androidx.core.app.NotificationCompat
+
+const val INPUT_EXTRA_KEY = "inputExtra"
 
 class ExampleService: Service() {
 
@@ -11,7 +15,33 @@ class ExampleService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return super.onStartCommand(intent, flags, startId)
+        val input = intent!!.getStringExtra(INPUT_EXTRA_KEY)
+
+        // Opening the current activity from the triggered notification from the service
+        val activityIntent = Intent(this, MainActivity::class.java)
+        val activityPendingIntent = PendingIntent.getActivity(this, 0, activityIntent, 0)
+
+
+        var notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Example Service")
+            .setContentText(input)
+            .setSmallIcon(R.drawable.ic_android)
+            .setContentIntent(activityPendingIntent)
+            .build()
+
+        // Since we are using a service we could call the this method
+        // instead of notificationManager.notify(1, notification)
+        startForeground(1, notification)
+
+        /**
+         * We will return what will happen when our system kills our service
+         *      START_NOT_STICKY: The service will just be gone and not started again
+         *      START_STICKY: The system will restart our service asap, but the intent we passed to it will be null
+         *      START_REDELIVER_INTENT: The system will restart our service asap, and it will pass the last intent to it again
+         *                              This played a bigger role for background services, because a foreground is very unlikely to be kill
+         */
+
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
